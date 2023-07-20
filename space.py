@@ -74,8 +74,8 @@ def draw_score():
 
 def game_over():
     game_over_font = pygame.font.SysFont(None, 50)
-    game_over_text = game_over_font.render("GAME OVER", True, WHITE)
-    screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
+    game_over_text = game_over_font.render("GAME OVER: YOU SCORED " + str(score)", True, WHITE)
+    screen.blit(game_over_text, (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2, SCREEN_HEIGHT // 2))
     pygame.display.update()
     pygame.time.wait(2000)
     pygame.quit()
