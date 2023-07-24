@@ -1,4 +1,4 @@
- random
+import random
 
 def choose_word():
     words_with_hints = [
