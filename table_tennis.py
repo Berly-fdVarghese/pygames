@@ -1,124 +1,123 @@
-import turtle
+import pygame
+import sys
 
-# Set up the screen
-win = turtle.Screen()
-win.title("Table Tennis Game")
-win.bgcolor("black")
-win.setup(width=800, height=600)
-win.tracer(0)
+# Initialize Pygame
+pygame.init()
 
-# Paddle A
-paddle_a = turtle.Turtle()
-paddle_a.speed(0)
-paddle_a.shape("square")
-paddle_a.color("white")
-paddle_a.shapesize(stretch_wid=6, stretch_len=2)
-paddle_a.penup()
-paddle_a.goto(-350, 0)
+# Screen settings
+WIDTH, HEIGHT = 800, 600
+win = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Table Tennis Game")
 
-# Paddle B
-paddle_b = turtle.Turtle()
-paddle_b.speed(0)
-paddle_b.shape("square")
-paddle_b.color("white")
-paddle_b.shapesize(stretch_wid=6, stretch_len=2)
-paddle_b.penup()
-paddle_b.goto(350, 0)
+# Colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 
-# Ball
-ball = turtle.Turtle()
-ball.speed(1)
-ball.shape("square")
-ball.color("white")
-ball.penup()
-ball.goto(0, 0)
-ball.dx = 0.15
-ball.dy = -0.15
+# Paddle settings
+PADDLE_WIDTH, PADDLE_HEIGHT = 10, 80
+PADDLE_SPEED = 5
 
-# Function to move paddle A up
-def paddle_a_up():
-    y = paddle_a.ycor()
-    if y < 250:
-        y += 20
-        paddle_a.sety(y)
+# Ball settings
+BALL_SIZE = 20
+BALL_SPEED_X, BALL_SPEED_Y = 3, 3
 
-# Function to move paddle A down
-def paddle_a_down():
-    y = paddle_a.ycor()
-    if y > -240:
-        y -= 20
-        paddle_a.sety(y)
+# Points needed to win
+WINNING_SCORE = 11
 
-# Function to move paddle B up
-def paddle_b_up():
-    y = paddle_b.ycor()
-    if y < 250:
-        y += 20
-        paddle_b.sety(y)
+# Create paddles
+paddle_a = pygame.Rect(50, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
+paddle_b = pygame.Rect(WIDTH - 50 - PADDLE_WIDTH, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
 
-# Function to move paddle B down
-def paddle_b_down():
-    y = paddle_b.ycor()
-    if y > -240:
-        y -= 20
-        paddle_b.sety(y)
+# Create ball
+ball = pygame.Rect(WIDTH // 2 - BALL_SIZE // 2, HEIGHT // 2 - BALL_SIZE // 2, BALL_SIZE, BALL_SIZE)
 
-# Keyboard bindings
-win.listen()
-win.onkeypress(paddle_a_up, "w")
-win.onkeypress(paddle_a_down, "s")
-win.onkeypress(paddle_b_up, "Up")
-win.onkeypress(paddle_b_down, "Down")
+# Ball direction
+ball_direction = [1, 1]
 
-# Score variables
+# Points tracking
 score_a = 0
 score_b = 0
 
-# Score display
-score_display = turtle.Turtle()
-score_display.speed(0)
-score_display.color("white")
-score_display.penup()
-score_display.hideturtle()
-score_display.goto(0, 260)
-score_display.write("Player A: {}  Player B: {}".format(score_a, score_b), align="center", font=("Courier", 24, "normal"))
+# Load font
+font = pygame.font.SysFont(None, 40)
+
+# Clock to control the frame rate
+clock = pygame.time.Clock()
+
+# Function to reset the ball's position and direction
+def reset_ball():
+    ball.center = (WIDTH // 2, HEIGHT // 2)
+    ball_direction[0] = 1
+    ball_direction[1] = 1
 
 # Main game loop
 while True:
-    win.update()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-    # Move the ball
-    ball.setx(ball.xcor() + ball.dx)
-    ball.sety(ball.ycor() + ball.dy)
+    # Move paddles
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_w]:
+        paddle_a.y -= PADDLE_SPEED
+    if keys[pygame.K_s]:
+        paddle_a.y += PADDLE_SPEED
+    if keys[pygame.K_UP]:
+        paddle_b.y -= PADDLE_SPEED
+    if keys[pygame.K_DOWN]:
+        paddle_b.y += PADDLE_SPEED
 
-    # Border checking
-    if ball.ycor() > 290:
-        ball.sety(290)
-        ball.dy *= -1
+    # Limit paddles within the screen bounds
+    paddle_a.y = max(0, min(HEIGHT - PADDLE_HEIGHT, paddle_a.y))
+    paddle_b.y = max(0, min(HEIGHT - PADDLE_HEIGHT, paddle_b.y))
 
-    if ball.ycor() < -290:
-        ball.sety(-290)
-        ball.dy *= -1
+    # Move ball
+    ball.x += ball_direction[0] * BALL_SPEED_X
+    ball.y += ball_direction[1] * BALL_SPEED_Y
 
-    if ball.xcor() > 390:
-        ball.goto(0, 0)
-        ball.dx *= -1
-        score_a += 1
-        score_display.clear()
-        score_display.write("Player A: {}  Player B: {}".format(score_a, score_b), align="center", font=("Courier", 24, "normal"))
+    # Ball collisions with walls
+    if ball.y <= 0 or ball.y >= HEIGHT - BALL_SIZE:
+        ball_direction[1] *= -1
 
-    if ball.xcor() < -390:
-        ball.goto(0, 0)
-        ball.dx *= -1
+    # Ball collisions with paddles
+    if ball.colliderect(paddle_a) or ball.colliderect(paddle_b):
+        ball_direction[0] *= -1
+
+    # Ball out of bounds
+    if ball.x <= 0:
         score_b += 1
-        score_display.clear()
-        score_display.write("Player A: {}  Player B: {}".format(score_a, score_b), align="center", font=("Courier", 24, "normal"))
+        reset_ball()
 
-    # Paddle and ball collisions
-    if (350 > ball.xcor() > 340) and (paddle_b.ycor() + 50 > ball.ycor() > paddle_b.ycor() - 50):
-        ball.setx(340)
-        ball.dx *= -1
+    if ball.x >= WIDTH - BALL_SIZE:
+        score_a += 1
+        reset_ball()
 
-    if (-350 < ball.xcor() < -340) and (paddle_a.ycor() + 50 > ball.ycor() > paddle_a.ycor() - 50):
-        ball.setx(-340)
-        ball.dx *= -1
+    # Check for winner
+    if score_a == WINNING_SCORE or score_b == WINNING_SCORE:
+        winner_text = "Player A wins!" if score_a == WINNING_SCORE else "Player B wins!"
+        win_text = font.render(winner_text, True, WHITE)
+        win.blit(win_text, (WIDTH // 2 - win_text.get_width() // 2, HEIGHT // 2 - win_text.get_height() // 2))
+        pygame.display.flip()
+        pygame.time.delay(3000)  # Show the winner for 3 seconds
+        score_a = 0
+        score_b = 0
+        reset_ball()
+
+    # Clear the screen
+    win.fill(BLACK)
+
+    # Draw paddles and ball
+    pygame.draw.rect(win, WHITE, paddle_a)
+    pygame.draw.rect(win, WHITE, paddle_b)
+    pygame.draw.ellipse(win, WHITE, ball)
+
+    # Draw score
+    score_text = font.render(f"Player A: {score_a}  Player B: {score_b}", True, WHITE)
+    win.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, 10))
+
+    # Update the display
+    pygame.display.flip()
+
+    # Limit the frame rate
+    clock.tick(60)
